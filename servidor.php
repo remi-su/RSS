@@ -36,16 +36,29 @@ function almacenarBaseDatos($feed){
 		return false; 
 	}
 	else{
+		$sql = "SELECT idFeed FROM `feeds`  ORDER BY idFeed DESC LIMIT 0, 1";
+		$resultado = $mysqli->query($sql);
+		if ($resultado->num_rows > 0){
+			$fila =  $resultado->fetch_array(MYSQLI_ASSOC);
+			$idFeed = $fila["idFeed"] + 1;
+		} else {
+			$idFeed = 1;
+		}
 		foreach ($feed->get_items(0, 0) as $item) {
-			$url = $item->get_link();
-			$titulo = $item->get_title();
-			$nombreAutor= $item->get_author()->get_name();
+			
+			$url = str_replace("'", "", $item->get_link());
+			$titulo = str_replace("'", "",$item->get_title());
+			$nombreAutor= str_replace("'", "",$item->get_author()->get_name());
 			$fecha = $item->get_date('Y-m-d');
-			$descripcion=$item->get_description();
-			$cadena = $item->get_content(true);
-
-			$sql = "";
+			$descripcion=obtenerURLImagen(str_replace("'", "", $item->get_description()),$idFeed);
+			$sql = "INSERT INTO `feeds`(`idFeed` ,`URL`, `titulo`, `nombreAutor`, `descripcion`, `fecha`) VALUES ($idFeed,'$url','$titulo','$nombreAutor','$descripcion','$fecha')";
 			$resultado = $mysqli->query($sql);
+			if ($resultado){
+				echo "El registro ".$idFeed." se ha logrado <br>";
+			} else {
+				echo "$sql <br>";
+			}
+			$idFeed++;
 		}
 
 		
@@ -53,11 +66,56 @@ function almacenarBaseDatos($feed){
 	}
 }
 
-//echo obtenerRSS($feed);
+function obtenerURLImagen($descripcion, $idFeed){
+	$nuevaDescripcion = "";
+	$descripcionDetallada = explode("<", $descripcion);
+	$etiquetaImagen = "";
+	$existe = false;
+	for ($i = 0; $i < count($descripcionDetallada); $i++){
+		$mystring = $descripcionDetallada[$i];
+		$findme   = 'img src';
+		$pos = strpos($mystring, $findme);
+		if (!($pos === false)) {
+			$etiquetaImagen = $mystring;
+			$existe = true;
+			break;
+		}
+	}
 
+	if ($existe){
+		//echo $etiquetaImagen;
+		$url = explode('"', $etiquetaImagen)[1];
+		//echo $url;
+		$arregloTemporal = explode(".", $url);
+		$extension = $arregloTemporal[count($arregloTemporal) - 1];
+		//echo $extension;
+		descargarImagenes($url,$idFeed,$extension);
+
+		$nuevaURL = "https://localhost/RSS/RecursosFeeds/".$idFeed.".".$extension;
+		$etiquetaImagenNueva = str_replace($url,$nuevaURL, $etiquetaImagen);
+		//echo $etiquetaImagenNueva."<br>".$etiquetaImagen;
+		$nuevaDescripcion = str_replace($etiquetaImagen,$etiquetaImagenNueva,$descripcion);
+		//echo $nuevaDescripcion;
+		return $nuevaDescripcion;
+	} else {
+		return $descripcion;
+	}
+
+}
+
+
+function descargarImagenes($urlImagen, $idFeed,$extension){
+	$img = file_get_contents($urlImagen);
+	file_put_contents($_SERVER['DOCUMENT_ROOT']."/RSS/RecursosFeeds/".$idFeed.".".$extension, $img);
+}
+
+//echo obtenerRSS($feed);
+almacenarBaseDatos($feed);
+echo $_SERVER['DOCUMENT_ROOT']."RSS/";
 if(isset($_GET['tipo']) && !empty($_GET['tipo'])) {
 	$action = $_GET['tipo'];
 	switch($action) {
 		case "obtener" : echo obtenerRSS($feed);break;
+		case "cargar" : echo almacenarBaseDatos($feed);break;
 	}
 }
