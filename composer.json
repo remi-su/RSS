@@ -1,0 +1,14 @@
+{
+    "name": "neko__000/rss",
+    "description": "tarea de victor hugo",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Samuel Aké",
+            "email": "sebasdosdos@gmail.com"
+        }
+    ],
+    "require": {
+        "simplepie/simplepie": "dev-master"
+    }
+}
