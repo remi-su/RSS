@@ -24,12 +24,13 @@ function obtenerRSS($feed){
 		$sql = "SELECT * FROM `feeds` WHERE MATCH (nombreAutor,descripcion,titulo)
 		AGAINST ('+$search*' IN BOOLEAN MODE)";
 		$resultado = $mysqli->query($sql);
-		if ($resultado->num_rows > 0){
-			$numeroDeFeeds = $resultado->num_rows;
-			for ($i=0; $i < $numeroDeFeeds; $i++) {
-				$feed =  $resultado->fetch_array(MYSQLI_ASSOC);
-				$cadena .= formatearFeeds($feed);
+		$numeroDeFeeds = $resultado->num_rows;
+		if ($numeroDeFeeds > 0){
+			$arrayName = array();
+			for ($i=0; $i < $numeroDeFeeds; $i++) { 
+				$arrayName[] = $resultado->fetch_array(MYSQLI_ASSOC);
 			}
+			$cadena = json_encode($arrayName);
 		} else {
 			return noHayFeeds();
 		}
@@ -38,31 +39,9 @@ function obtenerRSS($feed){
 	return $cadena;
 }
 
-function formatearFeeds ($feed){
-	$cadena = "";
-	$cadena .= '<div class="panel panel-default">';
-
-	$cadena .= '<div class="panel-heading">';
-	$cadena .= '<a href="' . $feed["URL"] . '">' . $feed["titulo"] . '</a></div>';
-	$cadena .= '<div class="panel-body">';
-	$cadena .= '<p>Author: ' . $feed["nombreAutor"] . '</p>';
-	$cadena .= '<p>Date: ' . $feed["fecha"] . '</p>';
-	$cadena .= '<p>' . $feed["descripcion"] . '</p>';
-	$cadena .= "</div>";
-	$cadena .= "</div>";
-
-	return $cadena;
-}
 
 function noHayFeeds (){
-	$cadena = "";
-	$cadena .= '<div class="panel panel-default">';
-
-	$cadena .= '<div class="panel-heading">';
-	$cadena .= 'No hay Resultados</div>';
-	$cadena .= '<div class="panel-body">';
-	$cadena .= " Lo sentimos, pero no encontramos resultados de su busqueda.</div>";
-	$cadena .= "</div>";
+	$cadena = "{}";
 	return $cadena;
 }
 
@@ -152,14 +131,15 @@ function obtenerRSSRecientes($feed){
 	}
 	else{
 		$cadena = "";
-		$sql = "SELECT * FROM `feeds`  ORDER BY fecha DESC LIMIT 0, 5";
+		$sql = "SELECT * FROM `feeds`  ORDER BY fecha DESC LIMIT 0, 1";
 		$resultado = $mysqli->query($sql);
 		$numeroDeFeeds = $resultado->num_rows;
 		if ($numeroDeFeeds > 0){
+			$arrayName = array();
 			for ($i=0; $i < $numeroDeFeeds; $i++) { 
-				$feed =  $resultado->fetch_array(MYSQLI_ASSOC);
-				$cadena .= formatearFeeds($feed);
+				$arrayName[] = $resultado->fetch_array(MYSQLI_ASSOC);
 			}
+			$cadena = json_encode($arrayName);
 			return $cadena;
 		} else {
 			return noHayFeeds();

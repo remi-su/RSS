@@ -15,7 +15,7 @@ function sendSearch (){
 		xmlhttp.onreadystatechange = function() {
 			if (this.readyState == 4 && this.status == 200) {
 				if (this.responseText !== "null"){
-					document.getElementById("rss").innerHTML = this.responseText;
+					generarFeeds(this.responseText);
 				} else {
 					alert("Ingrese una palabra de busqueda valida.");
 				}
@@ -27,7 +27,7 @@ function sendSearch (){
 	} else {
 		alert("Ingrese una palabra de busqueda valida.");
 	}
-	
+	0
 	
 }
 
@@ -36,7 +36,7 @@ function searchAll (){
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
-			document.getElementById("rss").innerHTML = this.responseText;
+			generarFeeds(this.responseText);
 		}
 	};
 	xmlhttp.open("GET", "https://localhost/RSS/servidor.php?tipo=all", true);
@@ -53,7 +53,9 @@ function verificarDatos (search){
 }
 searchAll ();
 function generarFeeds (texto){
-
+	if (texto !== "{}"){
+		var jsonInfo = JSON.parse(texto);
+	}
 }
 
 
