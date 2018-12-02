@@ -8,18 +8,50 @@ document.getElementById("button").addEventListener("click", sendSearch);
 function sendSearch (){
 	var search = document.getElementById("search").value;
 	
+	var campoVacio = verificarDatos(search);
+
+	if (campoVacio){
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200) {
+				if (this.responseText !== "null"){
+					document.getElementById("rss").innerHTML = this.responseText;
+				} else {
+					alert("Ingrese una palabra de busqueda valida.");
+				}
+				
+			}
+		};
+		xmlhttp.open("GET", "https://localhost/RSS/servidor.php?tipo=obtener&search="+ search, true);
+		xmlhttp.send();
+	} else {
+		alert("Ingrese una palabra de busqueda valida.");
+	}
+	
+	
+}
+
+function searchAll (){
+	
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
 			document.getElementById("rss").innerHTML = this.responseText;
 		}
 	};
-	xmlhttp.open("GET", "https://localhost/RSS/servidor.php?tipo=obtener&search="+ search, true);
+	xmlhttp.open("GET", "https://localhost/RSS/servidor.php?tipo=all", true);
 	xmlhttp.send();
 	
 }
 
-sendSearch ();
+function verificarDatos (search){
+	if (search !== ""){
+		return true;
+	}	else {
+		return false;
+	}
+}
+searchAll ();
 function generarFeeds (texto){
 
 }

@@ -12,21 +12,57 @@ $feed->init();
 
 //$item = $feed->get_item(0);
 function obtenerRSS($feed){
+	$search = $_GET["search"];
+	if (trim($search) == ""){
+		return "null";
+	}
+	$mysqli = new mysqli('127.0.0.1', 'root', '', 'rss');
 	$cadena = "";
-	foreach ($feed->get_items(0, 0) as $item) {
-		$cadena .= '<div class="panel panel-default">';
-
-		$cadena .= '<div class="panel-heading">';
-		$cadena .= '<a href="' . $item->get_link() . '">' . $item->get_title() . '</a></div>';
-		$cadena .= '<div class="panel-body">';
-		$cadena .= '<p>Author: ' . $item->get_author()->get_name() . '</p>';
-		$cadena .= '<p>Date: ' . $item->get_date('Y-m-d H:i:s') . '</p>';
-		$cadena .= '<p>' . $item->get_description() . '</p>';
-		$cadena .= "</div>";
-		$cadena .= $item->get_content(true);
-		$cadena .= "</div>";
+	if(!$mysqli){
+		return false; 
+	} else{
+		$sql = "SELECT * FROM `feeds` WHERE MATCH (nombreAutor,descripcion,titulo)
+		AGAINST ('+$search*' IN BOOLEAN MODE)";
+		$resultado = $mysqli->query($sql);
+		if ($resultado->num_rows > 0){
+			$numeroDeFeeds = $resultado->num_rows;
+			for ($i=0; $i < $numeroDeFeeds; $i++) {
+				$feed =  $resultado->fetch_array(MYSQLI_ASSOC);
+				$cadena .= formatearFeeds($feed);
+			}
+		} else {
+			return noHayFeeds();
+		}
 	}
 
+	return $cadena;
+}
+
+function formatearFeeds ($feed){
+	$cadena = "";
+	$cadena .= '<div class="panel panel-default">';
+
+	$cadena .= '<div class="panel-heading">';
+	$cadena .= '<a href="' . $feed["URL"] . '">' . $feed["titulo"] . '</a></div>';
+	$cadena .= '<div class="panel-body">';
+	$cadena .= '<p>Author: ' . $feed["nombreAutor"] . '</p>';
+	$cadena .= '<p>Date: ' . $feed["fecha"] . '</p>';
+	$cadena .= '<p>' . $feed["descripcion"] . '</p>';
+	$cadena .= "</div>";
+	$cadena .= "</div>";
+
+	return $cadena;
+}
+
+function noHayFeeds (){
+	$cadena = "";
+	$cadena .= '<div class="panel panel-default">';
+
+	$cadena .= '<div class="panel-heading">';
+	$cadena .= 'No hay Resultados</div>';
+	$cadena .= '<div class="panel-body">';
+	$cadena .= " Lo sentimos, pero no encontramos resultados de su busqueda.</div>";
+	$cadena .= "</div>";
 	return $cadena;
 }
 
@@ -54,9 +90,9 @@ function almacenarBaseDatos($feed){
 			$sql = "INSERT INTO `feeds`(`idFeed` ,`URL`, `titulo`, `nombreAutor`, `descripcion`, `fecha`) VALUES ($idFeed,'$url','$titulo','$nombreAutor','$descripcion','$fecha')";
 			$resultado = $mysqli->query($sql);
 			if ($resultado){
-				echo "El registro ".$idFeed." se ha logrado <br>";
+				//echo "El registro ".$idFeed." se ha logrado <br>";
 			} else {
-				echo "$sql <br>";
+				//echo "$sql <br>";
 			}
 			$idFeed++;
 		}
@@ -109,13 +145,36 @@ function descargarImagenes($urlImagen, $idFeed,$extension){
 	file_put_contents($_SERVER['DOCUMENT_ROOT']."/RSS/RecursosFeeds/".$idFeed.".".$extension, $img);
 }
 
+function obtenerRSSRecientes($feed){
+	$mysqli = new mysqli('127.0.0.1', 'root', '', 'rss');
+	if(!$mysqli){
+		return false; 
+	}
+	else{
+		$cadena = "";
+		$sql = "SELECT * FROM `feeds`  ORDER BY fecha DESC LIMIT 0, 5";
+		$resultado = $mysqli->query($sql);
+		$numeroDeFeeds = $resultado->num_rows;
+		if ($numeroDeFeeds > 0){
+			for ($i=0; $i < $numeroDeFeeds; $i++) { 
+				$feed =  $resultado->fetch_array(MYSQLI_ASSOC);
+				$cadena .= formatearFeeds($feed);
+			}
+			return $cadena;
+		} else {
+			return noHayFeeds();
+		}
+	}
+}
+
 //echo obtenerRSS($feed);
-almacenarBaseDatos($feed);
-echo $_SERVER['DOCUMENT_ROOT']."RSS/";
+//almacenarBaseDatos($feed);
+//echo $_SERVER['DOCUMENT_ROOT']."RSS/";
 if(isset($_GET['tipo']) && !empty($_GET['tipo'])) {
 	$action = $_GET['tipo'];
 	switch($action) {
 		case "obtener" : echo obtenerRSS($feed);break;
 		case "cargar" : echo almacenarBaseDatos($feed);break;
+		case "all" : echo obtenerRSSRecientes($feed);break;
 	}
 }
